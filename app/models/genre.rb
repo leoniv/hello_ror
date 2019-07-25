@@ -5,7 +5,7 @@ class Genre < ApplicationRecord
     super self.class.normalize(val)
   end
 
-  def self.map(*names)
+  def self.map(names)
     names.map do |name|
       nname = normalize name
       if exists? nname
@@ -16,14 +16,14 @@ class Genre < ApplicationRecord
     end.compact
   end
 
-  def self.map!(*names)
-    map(*names) do |_, nname|
-      create(name: nname)
+  def self.map!(names)
+    map(names) do |_, nname|
+      Genre.create(name: nname)
     end
   end
 
   def self.find(*names)
-    super *names.map {|val| normalize val}
+    super(*names.map { |val| normalize val })
   end
 
   def self.exists?(name)
@@ -34,3 +34,4 @@ class Genre < ApplicationRecord
     str.to_s.gsub(/[\n\r]/, ' ').gsub(/\s+/, ' ').strip.downcase
   end
 end
+

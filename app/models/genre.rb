@@ -9,9 +9,10 @@ class Genre < ApplicationRecord
   def self.map(names)
     names.map do |name|
       nname = normalize name
+      next if nname.empty?
       if exists? nname
         find nname
-      elsif !nname.empty? && block_given?
+      elsif block_given?
         yield name, nname
       end
     end.compact

@@ -8,6 +8,7 @@ describe Genre, type: :model do
 
   describe 'schema' do
     it { expect(described_class.primary_key).to eq 'name' }
+    it { should have_and_belong_to_many :movies }
   end
 
   describe 'helpers' do

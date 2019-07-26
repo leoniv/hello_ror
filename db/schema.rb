@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_26_034707) do
+ActiveRecord::Schema.define(version: 2019_07_26_043313) do
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -36,6 +36,17 @@ ActiveRecord::Schema.define(version: 2019_07_26_034707) do
   create_table "genres", primary_key: "name", id: :string, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "movies", force: :cascade do |t|
+    t.string "title_original"
+    t.string "title_local"
+    t.integer "year_of_release"
+    t.integer "rating"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["title_local"], name: "index_movies_on_title_local"
   end
 
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_26_052957) do
+ActiveRecord::Schema.define(version: 2019_07_26_081502) do
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -38,6 +38,12 @@ ActiveRecord::Schema.define(version: 2019_07_26_052957) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_countries_on_name"
+  end
+
+  create_table "countries_movies", id: false, force: :cascade do |t|
+    t.integer "country_id", null: false
+    t.integer "movie_id", null: false
+    t.index ["movie_id", "country_id"], name: "index_countries_movies_on_movie_id_and_country_id", unique: true
   end
 
   create_table "genres", primary_key: "name", id: :string, force: :cascade do |t|

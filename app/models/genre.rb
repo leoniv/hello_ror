@@ -1,5 +1,6 @@
 class Genre < ApplicationRecord
   validates :name, presence: true
+  has_and_belongs_to_many :movies
 
   def name=(val)
     super self.class.normalize(val)

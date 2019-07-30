@@ -11,6 +11,10 @@ FactoryBot.define do
     genres do
       Genre.map! Faker::Lorem.unique.words(10).sample(Random.rand(0..10))
     end
+
+    after :create do |movie|
+      movie.cover_image.attach(io: StringIO.new('fake cover'))
+    end
   end
 end
 

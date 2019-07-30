@@ -5,15 +5,17 @@ FactoryBot.define do
     year_of_release { Random.rand 1905..2013 }
     rating { Random.rand 0..10 }
     description { Faker::Lorem.unique.paragraph }
+
     countries_of_production do
-      Country.find_by! name: %w[USA Russia Italy].sample(Random.rand(0..3))
+      Country.find! name: %w[USA Russia Italy].sample(Random.rand(1..2))
     end
+
     genres do
       Genre.map! Faker::Lorem.unique.words(10).sample(Random.rand(0..10))
     end
 
     after :create do |movie|
-      movie.cover_image.attach(io: StringIO.new('fake cover'))
+      movie.cover_image.attach(io: StringIO.new('fake cover'), filename: 'cover.txt')
     end
   end
 end

@@ -17,14 +17,8 @@ RSpec.describe Movie, type: :model do
   end
 
   describe '#cover_image' do
-    def valid_instance
-      @valid_instanse = (
-        inst = described_class.create!(title_local: 'Doom')
-        inst.cover_image.attach(io: StringIO.new("blah"), filename: 'tmp')
-        inst
-      )
-    end
+    let(:instance) { create(:movie) }
 
-    it { expect(valid_instance.cover_image).to be_attached }
+    it { expect(instance.cover_image).to be_attached }
   end
 end

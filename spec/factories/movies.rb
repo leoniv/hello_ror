@@ -6,16 +6,17 @@ FactoryBot.define do
     rating { Random.rand 0..10 }
     description { Faker::Lorem.unique.paragraph }
 
-    countries_of_production do
-      Country.find! name: %w[USA Russia Italy].sample(Random.rand(1..2))
+    transient do
+      genres_count { Random.rand 0..5 }
+      countries_count { Random.rand 0..5 }
     end
 
-    genres do
-      Genre.map! Faker::Lorem.unique.words(10).sample(Random.rand(0..10))
-    end
+    factory :countries_of_production, parent: :country
 
-    after :create do |movie|
-      movie.cover_image.attach(io: StringIO.new('fake cover'), filename: 'cover.txt')
+    after :create do |movie, e|
+      movie.cover_image.attach(io: StringIO.new('cover'), filename: 'cover.txt')
+      create_list(:genre, e.genres_count, movies: [movie])
+      create_list(:countries_of_production, e.countries_count)
     end
   end
 end

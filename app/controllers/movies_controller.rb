@@ -1,9 +1,11 @@
 class MoviesController < ApplicationController
   before_action :set_movie, only: [:show, :update, :destroy]
+  PAGE_SIZE = 20
 
   # GET /movies
   def index
-    @movies = Movie.paginate(page: params[:page], per_page: 20)
+    @movies = Movie.paginate(page: params[:page], per_page: PAGE_SIZE)
+      .order(params[:order_by])
 
     render json: @movies
   end

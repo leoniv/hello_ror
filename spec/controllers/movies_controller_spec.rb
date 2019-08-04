@@ -7,7 +7,6 @@ RSpec.describe MoviesController, type: :controller do
     title_original: 'Doom original',
     description: 'description text',
     year_of_release: 2018,
-    countries_of_production: %w[Italy Franch Russia],
     rating: 7,
     genres: %w[comedy action trash],
     cover_image: nil
@@ -21,10 +20,19 @@ RSpec.describe MoviesController, type: :controller do
 
   let(:cover_image) { fixture_file_upload cover_image_file }
 
-  let(:valid_attributes) { VALID_ATTRIBUTES.merge cover_image: cover_image}
+  let(:valid_attributes) do
+    VALID_ATTRIBUTES.merge cover_image: cover_image,
+                           countries_of_production: countries.map(&:name)
+  end
+
+  let(:minimal_attributes) { { title_local: 'Doom local' } }
+
+  let(:countries) do
+    %w[Italy Franch Russia].map { |name| create :country, name: name }
+  end
 
   let(:invalid_attributes) do
-    skip('Add a hash of attributes invalid for your model')
+    {}
   end
 
   let(:valid_session) { {} }
@@ -43,20 +51,21 @@ RSpec.describe MoviesController, type: :controller do
     end
 
     it 'PERMITED_PARAMS' do
-      MoviesController::PERMITED_PARAMS.should eq\
-        %I[
-          title_local
-          title_original
-          year_of_release
-          countries_of_production
-          rating
-          genres
-          cover_image
+      MoviesController::PERMITED_PARAMS.should match_array\
+        [
+          :title_local,
+          :title_original,
+          :description,
+          :year_of_release,
+          { countries_of_production: [] },
+          :rating,
+          { genres: [] },
+          :cover_image,
         ]
     end
 
     it 'FILTERING_PARAMS' do
-      MoviesController::FILTERING_PARAMS.should eq\
+      MoviesController::FILTERING_PARAMS.should match_array\
         %I[
           title_local
           title_original
@@ -66,10 +75,65 @@ RSpec.describe MoviesController, type: :controller do
           genres
         ]
     end
+
+    describe 'MAPPING_PARAMS' do
+      subject { MoviesController::MAPPING_PARAMS }
+
+      it 'is hash of executables' do
+        expect(MoviesController::MAPPING_PARAMS).to match(
+          genres: respond_to(:call),
+          countries_of_production: respond_to(:call)
+        )
+      end
+
+      it '[:generes] mapping [String] to [Genre]' do
+        expect(Genre).to receive(:map!).with([1, 2, 3]) { %w[1 2 3] }
+        expect(subject[:genres].call([1, 2, 3])).to eq(%w[1 2 3])
+      end
+
+      it '[:countries_of_production] mapping [String] to [Country]' do
+        expect(Country).to receive(:where).with(name: %w[1 2 3]) { [1, 2, 3] }
+        expect(subject[:countries_of_production].call(%w[1 2 3])).to\
+          eq [1, 2, 3]
+      end
+    end
   end
 
-  describe "GET #index" do
-    it "returns a success response" do
+  describe 'helpers' do
+    describe '#map_params' do
+      it 'mapping :genres collection' do
+        params = { genres: ['foo', 'bar', nil] }
+        expect(subject.send(:map_params, params)[:genres]).to\
+          match_array [
+            be_a(Genre).and(have_attributes name: 'foo'),
+            be_a(Genre).and(have_attributes name: 'bar')
+          ]
+      end
+
+      it 'mapping :countries_of_production collection' do
+        foo = create(:country, name: 'foo')
+        bar = create(:country, name: 'bar')
+        params = { countries_of_production: ['foo', 'bar', 'baz', nil] }
+        expect(subject.send(:map_params, params)[:countries_of_production])
+          .to match_array [foo, bar]
+      end
+    end
+
+    describe 'movie_params' do
+      it 'fetching and mapping permitted request parameters' do
+        expect(subject.params).to receive(:fetch)
+          .with(:movie, {}) { subject.params }
+        expect(subject.params).to receive(:permit)
+          .with(MoviesController::PERMITED_PARAMS) { subject.params }
+        expect(subject).to receive(:map_params)
+          .with(subject.params) { :permitted_mapped_params }
+        expect(subject.send(:movie_params)).to eq :permitted_mapped_params
+      end
+    end
+  end
+
+  describe 'GET #index' do
+    it 'returns a success response' do
       get :index, params: {}, session: valid_session
       expect(response).to be_successful
     end
@@ -86,7 +150,7 @@ RSpec.describe MoviesController, type: :controller do
         end
 
         [MoviesController::PAGE_SIZE, 3].each_with_index do |expected_size, page|
-          it ":page defines number of page for paginate" do
+          it ':page defines number of page for paginate' do
             page += 1
             get :index, params: { page: page }, session: valid_session
             expect(response).to be_successful
@@ -126,41 +190,56 @@ RSpec.describe MoviesController, type: :controller do
     end
 
     describe 'filtering' do
-
+      it 'should has fiters' do
+        skip 'FIXME'
+      end
     end
   end
 
-  describe "GET #show" do
-    it "returns a success response" do
-      get :show, params: {id: movie.to_param}, session: valid_session
+  describe 'GET #show' do
+    it 'returns a success response' do
+      get :show, params: { id: movie.to_param }, session: valid_session
       expect(response).to be_successful
     end
   end
 
   describe 'POST #create' do
     context 'with valid params' do
-      it 'creates a new Movie' do
+      it 'creates a new' do
         expect do
-          post :create, params: { movie: valid_attributes },\
+          post :create, params: { movie: minimal_attributes },\
                         session: valid_session
         end.to change(Movie, :count).by(1)
-      end
-
-      it 'renders a JSON response with the new movie' do
-        post :create, params: { movie: valid_attributes },\
-                      session: valid_session
         expect(response).to have_http_status(:created)
         expect(response.content_type).to eq('application/json')
         expect(response.location).to eq(movie_url(Movie.last))
-        expect(parsed_body).to\
-          include('title_local' => 'Doom local').and\
-          include('title_original' => 'Doom original').and\
-          include('description' => 'description text').and\
-          include('year_of_release' => 2018).and\
-          include('countries_of_production' => %w[Italy Franch Russia]).and\
-          include('rating' => 7).and\
-          include('genres' => %w[comedy action trash])
-          include('cover_image' => /\/blobs\/\S+/i).and\
+      end
+
+      describe 'renders a JSON response with the new movie' do
+        it 'with all attributes set' do
+          post :create, params: { movie: valid_attributes },\
+                        session: valid_session
+          expect(response).to have_http_status(:created)
+          expect(parsed_body).to\
+            include('title_local' => 'Doom local').and\
+            include('title_original' => 'Doom original').and\
+            include('description' => 'description text').and\
+            include('year_of_release' => 2018).and\
+            include('countries_of_production' =>\
+                    match_array(%w[Italy Franch Russia])).and\
+            include('rating' => 7).and\
+            include('genres' => %w[comedy action trash]).and\
+            include('cover_image' => /\/blobs\/\S+/i).and\
+            include('created_at' => /\d{4}-\d{2}-\d{2}T\S+/).and\
+            include('updated_at' => /\d{4}-\d{2}-\d{2}T\S+/)
+        end
+
+        it 'with minimal attributes set' do
+          post :create, params: { movie: minimal_attributes },\
+                        session: valid_session
+          expect(response).to have_http_status(:created)
+          expect(parsed_body).to include('title_local' => 'Doom local')
+        end
       end
     end
 

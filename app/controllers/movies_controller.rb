@@ -6,11 +6,12 @@ class MoviesController < ApplicationController
     title_original
     description
     year_of_release
-    countries_of_production
     rating
-    genres
     cover_image
-  ].freeze
+  ]
+  PERMITED_PARAMS << { countries_of_production: [] }
+  PERMITED_PARAMS << { genres: [] }
+  PERMITED_PARAMS.freeze
 
   FILTERING_PARAMS = %I[
     title_local
@@ -20,6 +21,11 @@ class MoviesController < ApplicationController
     rating
     genres
   ].freeze
+
+  MAPPING_PARAMS = {
+    genres: ->(arr) { Genre.map! arr },
+    countries_of_production: ->(arr) { Country.where name: arr }
+  }.freeze
 
   # GET /movies
   def index
@@ -58,13 +64,19 @@ class MoviesController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_movie
-      @movie = Movie.find(params[:id])
-    end
 
-    # Only allow a trusted parameter "white list" through.
-    def movie_params
-      params.fetch(:movie, {}).permit PERMITED_PARAMS
+  def set_movie
+    @movie = Movie.find(params[:id])
+  end
+
+  def movie_params
+    map_params params.fetch(:movie, {}).permit(PERMITED_PARAMS)
+  end
+
+  def map_params(params)
+    MAPPING_PARAMS.each do |param, f|
+      params[param] = f.call(params[param]) unless params[param].nil?
     end
+    params
+  end
 end

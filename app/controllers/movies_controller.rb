@@ -1,12 +1,28 @@
 class MoviesController < ApplicationController
-  before_action :set_movie, only: [:show, :update, :destroy]
+  before_action :set_movie, only: %I[show update destroy]
   PAGE_SIZE = 20
+  PERMITED_PARAMS = %I[
+    title_local
+    title_original
+    year_of_release
+    countries_of_production
+    rating
+    genres
+    cover_image
+  ].freeze
+
+  FILTERING_PARAMS = %I[
+    title_local
+    title_original
+    year_of_release
+    countries_of_production
+    rating
+    genres
+  ].freeze
 
   # GET /movies
   def index
     @movies = Movie.paginate(page: params[:page], per_page: PAGE_SIZE)
-      .order(params[:order_by])
-
     render json: @movies
   end
 
@@ -48,6 +64,6 @@ class MoviesController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def movie_params
-      params.fetch(:movie, {})
+      params.fetch(:movie, {}).permit PERMITED_PARAMS
     end
 end

@@ -1,15 +1,22 @@
+# frozen_string_literal: true
 require 'rails_helper'
 
 RSpec.describe MoviesController, type: :controller do
-  let(:valid_attributes) {
-    {
-      title_local: 'Doom local'
-    }
+  VALID_ATTRIBUTES = {
+    title_local: 'Doom local',
+    title_original: 'Doom original',
+    year_of_release: 2018,
+    countries_of_production: %w[Italy Franch Russia],
+    rating: 7,
+    genres: %w[comedy action trash],
+    cover_image: 'FIXME'
   }
 
-  let(:invalid_attributes) {
-    skip("Add a hash of attributes invalid for your model")
-  }
+  let(:valid_attributes) { VALID_ATTRIBUTES }
+
+  let(:invalid_attributes) do
+    skip('Add a hash of attributes invalid for your model')
+  end
 
   let(:valid_session) { {} }
 
@@ -21,6 +28,37 @@ RSpec.describe MoviesController, type: :controller do
     JSON.parse response.body
   end
 
+  describe 'constants is defined' do
+    it 'PAGE_SIZE' do
+      MoviesController::PAGE_SIZE.should be 20
+    end
+
+    it 'PERMITED_PARAMS' do
+      MoviesController::PERMITED_PARAMS.should eq\
+        %I[
+          title_local
+          title_original
+          year_of_release
+          countries_of_production
+          rating
+          genres
+          cover_image
+        ]
+    end
+
+    it 'FILTERING_PARAMS' do
+      MoviesController::FILTERING_PARAMS.should eq\
+        %I[
+          title_local
+          title_original
+          year_of_release
+          countries_of_production
+          rating
+          genres
+        ]
+    end
+  end
+
   describe "GET #index" do
     it "returns a success response" do
       get :index, params: {}, session: valid_session
@@ -30,10 +68,6 @@ RSpec.describe MoviesController, type: :controller do
     describe 'paginate' do
       before :example do
         create_list(:movie, MoviesController::PAGE_SIZE + 3)
-      end
-
-      it 'PAGE_SIZE is defined' do
-        MoviesController::PAGE_SIZE.should be 20
       end
 
       context 'parameters' do
@@ -53,47 +87,37 @@ RSpec.describe MoviesController, type: :controller do
       end
     end
 
-    describe 'order' do
+    describe 'sorting' do
       before :example do
-        create(:movie, year_of_release: 1991, rating: 1)
-        create(:movie, year_of_release: 1990, rating: 2)
-        create(:movie, year_of_release: 1992, rating: 0)
+        expect(movies.empty?).to be(false), 'cretate some movies'
       end
 
-      context 'invalid value' do
-        it 'will be ignored' do
-          get :index, params: { order_by: 'invalid value' }
+      let(:movies) do
+        [1, 0, 2].to_a.map do |i|
+          create(:movie, year_of_release: 1990 + i, rating: i)
+        end
+      end
+
+      context 'parameter :sort takes attribute by which to sort' do
+        %w[year_of_release rating].each do |attr|
+          [nil, ':desc'].each do |desc|
+            it "#{desc.nil? ? 'ascend' : 'descend'} `sort=#{attr}#{desc}'" do
+              get :index, params: { sort: [attr + desc.to_s] }
+              expect(parsed_body.map { |movie| movie[attr] }).to eq movies
+                .map(&:"#{attr}").sort.send(desc.nil? ? :itself : :reverse)
+            end
+          end
+        end
+
+        it 'ingnore invalid attributes' do
+          get :index, params: { sort: %w[invalid value] }
           expect(response).to be_successful
         end
       end
+    end
 
-      context 'ascending by' do
-        it '-year_of_release' do
-          get :index, params: { order_by: '-year_of_release' }
-          expect(parsed_body.map { |hash| hash['-year_of_release'] } )
-            .to eq [1990, 1991, 1992]
-        end
+    describe 'filtering' do
 
-        it '-rating' do
-          get :index, params: { order_by: 'rating' }
-          expect(parsed_body.map { |hash| hash['rating'] })
-            .to eq [0, 1, 2]
-        end
-      end
-
-      context 'descending by' do
-        it 'year_of_release' do
-          get :index, params: { order_by: 'year_of_release ' }
-          expect(parsed_body.map { |hash| hash['year_of_release'] } )
-            .to eq [1992, 1991, 1990]
-        end
-
-        it ':rating' do
-          get :index, params: { order_by: 'rating' }
-          expect(parsed_body.map { |hash| hash['rating'] })
-            .to eq [2, 1, 0]
-        end
-      end
     end
   end
 

@@ -4,6 +4,7 @@ class MoviesController < ApplicationController
   PERMITED_PARAMS = %I[
     title_local
     title_original
+    description
     year_of_release
     countries_of_production
     rating

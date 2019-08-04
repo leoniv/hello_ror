@@ -5,14 +5,23 @@ RSpec.describe MoviesController, type: :controller do
   VALID_ATTRIBUTES = {
     title_local: 'Doom local',
     title_original: 'Doom original',
+    description: 'description text',
     year_of_release: 2018,
     countries_of_production: %w[Italy Franch Russia],
     rating: 7,
     genres: %w[comedy action trash],
-    cover_image: 'FIXME'
+    cover_image: nil
   }
 
-  let(:valid_attributes) { VALID_ATTRIBUTES }
+  let(:cover_image_file) do
+    Tempfile.new('.png') do |f|
+      f.write('FAKE IMG')
+    end
+  end
+
+  let(:cover_image) { fixture_file_upload cover_image_file }
+
+  let(:valid_attributes) { VALID_ATTRIBUTES.merge cover_image: cover_image}
 
   let(:invalid_attributes) do
     skip('Add a hash of attributes invalid for your model')
@@ -128,25 +137,37 @@ RSpec.describe MoviesController, type: :controller do
     end
   end
 
-  describe "POST #create" do
-    context "with valid params" do
-      it "creates a new Movie" do
-        expect {
-          post :create, params: {movie: valid_attributes}, session: valid_session
-        }.to change(Movie, :count).by(1)
+  describe 'POST #create' do
+    context 'with valid params' do
+      it 'creates a new Movie' do
+        expect do
+          post :create, params: { movie: valid_attributes },\
+                        session: valid_session
+        end.to change(Movie, :count).by(1)
       end
 
-      it "renders a JSON response with the new movie" do
-        post :create, params: {movie: valid_attributes}, session: valid_session
+      it 'renders a JSON response with the new movie' do
+        post :create, params: { movie: valid_attributes },\
+                      session: valid_session
         expect(response).to have_http_status(:created)
         expect(response.content_type).to eq('application/json')
         expect(response.location).to eq(movie_url(Movie.last))
+        expect(parsed_body).to\
+          include('title_local' => 'Doom local').and\
+          include('title_original' => 'Doom original').and\
+          include('description' => 'description text').and\
+          include('year_of_release' => 2018).and\
+          include('countries_of_production' => %w[Italy Franch Russia]).and\
+          include('rating' => 7).and\
+          include('genres' => %w[comedy action trash])
+          include('cover_image' => /\/blobs\/\S+/i).and\
       end
     end
 
-    context "with invalid params" do
-      it "renders a JSON response with errors for the new movie" do
-        post :create, params: {movie: invalid_attributes}, session: valid_session
+    context 'with invalid params' do
+      it 'renders a JSON response with errors for the new movie' do
+        post :create, params: { movie: invalid_attributes },\
+                      session: valid_session
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response.content_type).to eq('application/json')
       end

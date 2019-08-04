@@ -10,8 +10,12 @@ class MovieSerializer < ActiveModel::Serializer
   end
 
   attribute :cover_image do
-    rails_blob_path(movie.cover_image, path_only: true) if\
+    url_helper.rails_blob_path(movie.cover_image, only_path: true) if\
       movie.cover_image.attached?
+  end
+
+  def url_helper
+    Rails.application.routes.url_helpers
   end
 
   def movie

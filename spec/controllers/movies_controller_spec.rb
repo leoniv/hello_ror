@@ -37,8 +37,6 @@ RSpec.describe MoviesController, type: :controller do
 
   let(:movie) { create :movie }
 
-  let(:movie_with_attachments) { create :movie_with_attachments }
-
   let(:be_expected_body) do
     match('id' => be > 0,
           'title_local' => 'Doom local',

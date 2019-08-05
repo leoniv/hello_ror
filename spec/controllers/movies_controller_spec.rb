@@ -31,9 +31,7 @@ RSpec.describe MoviesController, type: :controller do
     %w[Italy Franch Russia].map { |name| create :country, name: name }
   end
 
-  let(:invalid_attributes) do
-    {}
-  end
+  let(:invalid_attributes) { { rating: 100 } }
 
   let(:valid_session) { {} }
 
@@ -41,11 +39,40 @@ RSpec.describe MoviesController, type: :controller do
 
   let(:movie_with_attachments) { create :movie_with_attachments }
 
+  let(:be_expected_body) do
+    match('id' => be > 0,
+          'title_local' => 'Doom local',
+          'title_original' => 'Doom original',
+          'description' => 'description text',
+          'year_of_release' => 2018,
+          'countries_of_production' => match_array(%w[Italy Franch Russia]),
+          'rating' => 7,
+          'genres' => %w[comedy action trash],
+          'cover_image' => match(%r{\/blobs/\S+}i),
+          'created_at' => match(/\d{4}-\d{2}-\d{2}T\S+/),
+          'updated_at' => match(/\d{4}-\d{2}-\d{2}T\S+/))
+  end
+
+  let(:be_expected_movie) do
+    have_attributes('id' => be > 0,
+                    'title_local' => 'Doom local',
+                    'title_original' => 'Doom original',
+                    'description' => 'description text',
+                    'year_of_release' => 2018,
+                    'countries_of_production' => match_array(countries),
+                    'rating' => 7,
+                    'genres' => match_array(Genre.where name: %w[comedy action trash]),
+                    'cover_image' => be_attached,
+                    'created_at' => be_a(Time),
+                    'updated_at' => be_a(Time)
+                  )
+  end
+
   def parsed_body
     JSON.parse response.body
   end
 
-  describe 'constants is defined' do
+  describe 'constants are defined' do
     it 'PAGE_SIZE' do
       MoviesController::PAGE_SIZE.should be 20
     end
@@ -133,9 +160,17 @@ RSpec.describe MoviesController, type: :controller do
   end
 
   describe 'GET #index' do
+
     it 'returns a success response' do
+      item = create(:movie)
       get :index, params: {}, session: valid_session
       expect(response).to be_successful
+      expect(parsed_body[0]).to eq(
+        (JSON.parse item.to_json).merge(
+            'countries_of_production' => [],
+            'genres' => [],
+            'cover_image' => nil)
+      )
     end
 
     describe 'paginate' do
@@ -200,6 +235,13 @@ RSpec.describe MoviesController, type: :controller do
     it 'returns a success response' do
       get :show, params: { id: movie.to_param }, session: valid_session
       expect(response).to be_successful
+      expect(parsed_body).to eq(
+        (JSON.parse movie.to_json).merge(
+          'countries_of_production' => [],
+          'genres' => [],
+          'cover_image' => nil
+        )
+      )
     end
   end
 
@@ -220,18 +262,7 @@ RSpec.describe MoviesController, type: :controller do
           post :create, params: { movie: valid_attributes },\
                         session: valid_session
           expect(response).to have_http_status(:created)
-          expect(parsed_body).to\
-            include('title_local' => 'Doom local').and\
-            include('title_original' => 'Doom original').and\
-            include('description' => 'description text').and\
-            include('year_of_release' => 2018).and\
-            include('countries_of_production' =>\
-                    match_array(%w[Italy Franch Russia])).and\
-            include('rating' => 7).and\
-            include('genres' => %w[comedy action trash]).and\
-            include('cover_image' => /\/blobs\/\S+/i).and\
-            include('created_at' => /\d{4}-\d{2}-\d{2}T\S+/).and\
-            include('updated_at' => /\d{4}-\d{2}-\d{2}T\S+/)
+          expect(parsed_body).to be_expected_body
         end
 
         it 'with minimal attributes set' do
@@ -253,40 +284,44 @@ RSpec.describe MoviesController, type: :controller do
     end
   end
 
-  describe "PUT #update" do
-    context "with valid params" do
+  describe 'PUT #update' do
+    context 'with valid params' do
       let(:new_attributes) {
-        skip("Add a hash of attributes valid for your model")
+        valid_attributes
       }
 
-      it "updates the requested movie" do
-        put :update, params: {id: movie.to_param, movie: new_attributes}, session: valid_session
+      it 'updates the requested movie' do
+        put :update, params: { id: movie.to_param, movie: new_attributes },\
+          session: valid_session
         movie.reload
-        skip("Add assertions for updated state")
+        expect(movie).to be_expected_movie
       end
 
-      it "renders a JSON response with the movie" do
-        put :update, params: {id: movie.to_param, movie: valid_attributes}, session: valid_session
+      it 'renders a JSON response with the movie' do
+        put :update, params: { id: movie.to_param, movie: new_attributes },\
+          session: valid_session
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to eq('application/json')
+        expect(parsed_body).to be_expected_body
       end
     end
 
-    context "with invalid params" do
-      it "renders a JSON response with errors for the movie" do
-        put :update, params: {id: movie.to_param, movie: invalid_attributes}, session: valid_session
+    context 'with invalid params' do
+      it 'renders a JSON response with errors for the movie' do
+        put :update, params: { id: movie.to_param, movie: invalid_attributes },\
+          session: valid_session
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response.content_type).to eq('application/json')
       end
     end
   end
 
-  describe "DELETE #destroy" do
-    it "destroys the requested movie" do
+  describe 'DELETE #destroy' do
+    it 'destroys the requested movie' do
       movie.should be movie
-      expect {
-        delete :destroy, params: {id: movie.to_param}, session: valid_session
-      }.to change(Movie, :count).by(-1)
+      expect do
+        delete :destroy, params: { id: movie.to_param }, session: valid_session
+      end.to change(Movie, :count).by(-1)
     end
   end
 end

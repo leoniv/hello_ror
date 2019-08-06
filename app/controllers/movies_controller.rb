@@ -61,6 +61,7 @@ class MoviesController < ApplicationController
   # DELETE /movies/1
   def destroy
     @movie.destroy
+    @movie.cover_image.purge if @movie.cover_image.attached?
   end
 
   private

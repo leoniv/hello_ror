@@ -320,6 +320,15 @@ RSpec.describe MoviesController, type: :controller do
       expect do
         delete :destroy, params: { id: movie.to_param }, session: valid_session
       end.to change(Movie, :count).by(-1)
+      expect(movie).to be_destroyed
+    end
+
+    it 'purge attached cover_image' do
+      movie = create(:movie, cover_image: cover_image)
+      expect(movie.cover_image).to be_attached
+      delete :destroy, params: { id: movie.to_param }, session: valid_session
+      expect { movie.cover_image.blob.download }.to\
+        raise_error %r/No such file or directory/i
     end
   end
 end

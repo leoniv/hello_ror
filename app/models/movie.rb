@@ -26,7 +26,7 @@ class Movie < ApplicationRecord
 
   scope :genres, ->(name) do
     joins(:genres)
-      .where('genres.name like ?', name)
+      .where(genres: { name: name } )
       .distinct
   end
 end

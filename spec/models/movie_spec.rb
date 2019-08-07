@@ -35,7 +35,7 @@ RSpec.describe Movie, type: :model do
                  create(:country, name: "Fake country #{i} #{j}")
                end),
                genres: (3.times.to_a.map do |j|
-                 create(:genre, name: "Fake genre #{i} #{j}")
+                 create(:genre, name: "genre #{i} #{j}")
                end)
       end
     end
@@ -54,8 +54,10 @@ RSpec.describe Movie, type: :model do
     its(:countries_of_production, '%country 2%') do
       should match_array movies[2]
     end
-    its(:genres, '%genre _ 1') { should match_array movies }
-    its(:genres, '%genre 1%') { should match_array movies[1] }
+    its(:genres, 'genre 4 1') { should match_array movies[4] }
+    its(:genres, ['genre 1 1', 'genre 2 0']) do
+      should match_array movies[1..2]
+    end
   end
 end
 

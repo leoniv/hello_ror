@@ -48,8 +48,10 @@ RSpec.describe Movie, type: :model do
 
     its(:title_local, '%local 2%') { should match_array movies[2] }
     its(:title_original, '%original 3%') { should match_array movies[3] }
-    its(:year_of_release, 1991, 1993) { should match_array movies[1..3] }
-    its(:rating, 3, 5) { should match_array movies[3..5] }
+    its(:year_of_release_from, 1992) { should match_array movies[2..4] }
+    its(:year_of_release_to, 1992) { should match_array movies[0..2] }
+    its(:rating_from, 3) { should match_array movies[3..4] }
+    its(:rating_to, 3) { should match_array movies[0..3] }
     its(:countries_of_production, '%country _ 2') { should match_array movies }
     its(:countries_of_production, '%country 2%') do
       should match_array movies[2]

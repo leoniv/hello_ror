@@ -15,7 +15,8 @@ class Movie < ApplicationRecord
   end
 
   %I[year_of_release rating].each do |attribute|
-    scope attribute, ->(from, to) { where(attribute => from..to) }
+    scope "#{attribute}_from", ->(from) { where("#{attribute} >= ?", from) }
+    scope "#{attribute}_to", ->(to) { where("#{attribute} <= ?", to) }
   end
 
   scope :countries_of_production, ->(name) do

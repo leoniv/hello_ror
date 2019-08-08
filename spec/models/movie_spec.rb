@@ -18,7 +18,7 @@ RSpec.describe Movie, type: :model do
   end
 
   describe '#cover_image' do
-    let(:instance) { create(:movie) }
+    let(:instance) { create(:movie_with_attachments) }
 
     it { expect(instance.cover_image).to be_attached }
   end

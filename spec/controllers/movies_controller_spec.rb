@@ -295,7 +295,7 @@ RSpec.describe MoviesController, type: :controller do
       expect do
         delete :destroy, params: { id: movie.to_param }, session: valid_session
       end.to change(Movie, :count).by(-1)
-      expect(movie).to be_destroyed
+      expect{ movie.reload }.to raise_error ActiveRecord::RecordNotFound
     end
 
     it 'purge attached cover_image' do

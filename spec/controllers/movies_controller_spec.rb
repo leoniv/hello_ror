@@ -89,18 +89,6 @@ RSpec.describe MoviesController, type: :controller do
         ]
     end
 
-    it 'FILTERING_PARAMS' do
-      MoviesController::FILTERING_PARAMS.should match_array\
-        %I[
-          title_local
-          title_original
-          year_of_release
-          countries_of_production
-          rating
-          genres
-        ]
-    end
-
     describe 'MAPPING_PARAMS' do
       subject { MoviesController::MAPPING_PARAMS }
 
@@ -193,7 +181,7 @@ RSpec.describe MoviesController, type: :controller do
       end
     end
 
-    describe 'sorting' do
+    describe 'filter' do
       before :example do
         expect(movies.empty?).to be(false), 'cretate some movies'
       end
@@ -204,27 +192,14 @@ RSpec.describe MoviesController, type: :controller do
         end
       end
 
-      context 'parameter :sort takes attribute by which to sort' do
-        %w[year_of_release rating].each do |attr|
-          [nil, ':desc'].each do |desc|
-            it "#{desc.nil? ? 'ascend' : 'descend'} `sort=#{attr}#{desc}'" do
-              get :index, params: { sort: [attr + desc.to_s] }
-              expect(parsed_body.map { |movie| movie[attr] }).to eq movies
-                .map(&:"#{attr}").sort.send(desc.nil? ? :itself : :reverse)
-            end
-          end
-        end
-
-        it 'ingnore invalid attributes' do
-          get :index, params: { sort: %w[invalid value] }
-          expect(response).to be_successful
-        end
+      it 'should has fitring & sorting' do
+        get :index, params: { rating_from: 1, sort_by: 'rating:desc' }
+        expect(parsed_body.map { |m| m['rating'] }).to match_array [2, 1]
       end
-    end
 
-    describe 'filtering' do
-      it 'should has fiters' do
-        skip 'FIXME'
+      it 'ignores invalid params' do
+        get :index, params: { invalid_filter: 1, sort_by: 'invalid_sorting:' }
+        expect(parsed_body.map { |m| m['rating'] }).to match_array [1, 0, 2]
       end
     end
   end

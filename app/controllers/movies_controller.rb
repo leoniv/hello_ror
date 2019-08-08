@@ -13,15 +13,6 @@ class MoviesController < ApplicationController
   PERMITED_PARAMS << { genres: [] }
   PERMITED_PARAMS.freeze
 
-  FILTERING_PARAMS = %I[
-    title_local
-    title_original
-    year_of_release
-    countries_of_production
-    rating
-    genres
-  ].freeze
-
   MAPPING_PARAMS = {
     genres: ->(arr) { Genre.map! arr },
     countries_of_production: ->(arr) { Country.where name: arr }
@@ -29,7 +20,9 @@ class MoviesController < ApplicationController
 
   # GET /movies
   def index
-    @movies = Movie.paginate(page: params[:page], per_page: PAGE_SIZE)
+    @movies = Movie.filter
+                   .apply(params)
+                   .paginate(page: params[:page], per_page: PAGE_SIZE)
     render json: @movies
   end
 

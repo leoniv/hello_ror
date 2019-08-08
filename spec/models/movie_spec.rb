@@ -74,19 +74,19 @@ RSpec.describe Movie, type: :model do
         end
       end
 
-      its(:apply, param(sort_by: ['year_of_release'])) do
+      its(:apply, param(sort_by: 'year_of_release')) do
         should eq movies.sort_by(&:year_of_release)
       end
 
-      its(:apply, param(sort_by: ['year_of_release:desc'])) do
+      its(:apply, param(sort_by: 'year_of_release:desc')) do
         should eq movies.sort_by(&:year_of_release).reverse
       end
 
-      its(:apply, param(sort_by: ['rating'])) do
+      its(:apply, param(sort_by: 'rating')) do
         should eq movies.sort_by(&:rating)
       end
 
-      its(:apply, param(sort_by: ['rating:desc'])) do
+      its(:apply, param(sort_by: 'rating:desc')) do
         should eq movies.sort_by(&:rating).reverse
       end
     end

@@ -28,3 +28,5 @@
 coverage
 spring-*/
 .idea/
+doc/
+.yardoc/

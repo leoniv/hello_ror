@@ -1,4 +1,5 @@
 class Movie < ApplicationRecord
+  include ::Filterable
   LUMIERE_YEAR = 1895
   FUTURE_YEAR = Date.today.year + 5
 
@@ -11,24 +12,27 @@ class Movie < ApplicationRecord
   has_one_attached :cover_image
 
   %I[title_original title_local].each do |attribute|
-    scope attribute, ->(value) { where("#{attribute} like ?", value) }
+    filter_scope attribute, ->(value) { where("#{attribute} like ?", value) }
   end
 
   %I[year_of_release rating].each do |attribute|
-    scope "#{attribute}_from", ->(from) { where("#{attribute} >= ?", from) }
-    scope "#{attribute}_to", ->(to) { where("#{attribute} <= ?", to) }
+    filter_scope "#{attribute}_from",
+                 ->(from) { where("#{attribute} >= ?", from) }
+    filter_scope "#{attribute}_to", ->(to) { where("#{attribute} <= ?", to) }
   end
 
-  scope :countries_of_production, ->(name) do
+  filter_scope :countries_of_production, ->(name) do
     joins(:countries_of_production)
       .where('countries.name like ?', name)
       .distinct
   end
 
-  scope :genres, ->(name) do
+  filter_scope :genres, ->(name) do
     joins(:genres)
       .where(genres: { name: name } )
       .distinct
   end
+
+  sort_by %w[rating year_of_release]
 end
 

@@ -11,7 +11,10 @@ RSpec.describe Movie, type: :model do
   end
 
   describe 'schema' do
-    it { should have_db_index :title_local }
+    %I[ title_local title_original year_of_release rating ].each do |attr|
+      it { should have_db_index attr }
+    end
+
     it { should have_and_belong_to_many :genres }
     it { should have_and_belong_to_many(:countries_of_production)
           .class_name(:Country) }

@@ -94,5 +94,19 @@ RSpec.describe Movie, type: :model do
       end
     end
   end
+
+  describe 'security' do
+    context 'XSS/SQL injection' do
+      it 'should detect javascrip injection' do
+        js = "<script>alert('Hello');</script>"
+        expect(craete(:movie, title_local: js)).to raise_error 'FIXME'
+      end
+
+      it 'should detect sql injection' do
+        sql = "select 1"
+        expect(craete(:movie, title_local: sql)).to raise_error 'FIXME'
+      end
+    end
+  end
 end
 

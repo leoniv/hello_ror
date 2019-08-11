@@ -52,6 +52,7 @@ GEM
     backport (1.1.1)
     bootsnap (1.4.4)
       msgpack (~> 1.0)
+    brakeman (4.6.1)
     builder (3.2.3)
     byebug (11.0.1)
     case_transform (0.2)
@@ -219,6 +220,7 @@ PLATFORMS
 DEPENDENCIES
   active_model_serializers (~> 0.10)
   bootsnap (>= 1.1.0)
+  brakeman
   byebug
   database_cleaner
   factory_bot_rails

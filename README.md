@@ -1,3 +1,3 @@
 # Hello RoR
 
-plaing with RoR
+Playing with RoR

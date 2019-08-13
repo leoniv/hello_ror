@@ -36,39 +36,35 @@ resource 'Movies' do
   get '/movies' do
     explanation 'Listing movies'
 
-    def self.page_size
-      MoviesController::PAGE_SIZE
-    end
-    delegate :page_size, to: :class
-
     context '200' do
       def do_request(*args, **opts)
         super
         expect(status).to eq 200
       end
 
-      context "Listing is issued by pages with #{page_size} movies on a page" do
+      describe 'Pagination' do
+        def self.page_size
+          MoviesController::PAGE_SIZE
+        end
+        delegate :page_size, to: :class
+
         before :example do
           cook_movies 30
         end
 
-        example "On default returns first page" do
-          do_request
+        parameter :page, 'Specifies page number or offset of listing beginning'
 
+        example_request 'Pagination starts from first page' do
+          explanation "Listed #{page_size} items on a page"
           expect(parsed_body.size).to be page_size
         end
 
-        example 'Parameter :page specifies offset of movies listing' do
-          params = {
-            page: 2
-          }
-          do_request params
-
+        example_request 'Pagination when page number is specified', page: 2 do
           expect(parsed_body.size).to be(30 - page_size)
         end
       end
 
-      context 'Listing can be sorted with parameter :sort_by' do
+      describe 'Sotring' do
         let(:movies) do
           [2, 0, 1].map do |i|
             create(:movie, rating: i, year_of_release: 1990 + i)
@@ -79,43 +75,38 @@ resource 'Movies' do
           movies
         end
 
-        context 'Sorting by year of release' do
-          example 'Ascending sorting' do
-            params = {
-              sort_by: 'year_of_release'
-            }
+        def self.expected_sorting_attributes
+          { sort_by: %w[rating year_of_release] }
+        end
+        delegate :expected_sorting_attributes, to: :class
 
-            do_request params
-            expect(body_map 'year_of_release').to eq [1990, 1991, 1992]
-          end
-
-          example 'Descending sorting' do
-            params = {
-              sort_by: 'year_of_release:desc'
-            }
-
-            do_request params
-            expect(body_map 'year_of_release').to eq [1992, 1991, 1990]
-          end
+        context 'Validates sorting attributes' do
+          subject { expected_sorting_attributes }
+          it('', document: false) { should eq Movie.filter.sort_attributes }
         end
 
-        context 'Sorting by rating' do
-          example 'Ascending sorting' do
-            params = {
-              sort_by: 'rating'
-            }
+        expected_sorting_attributes.each do |param, attrs|
+          context param do
+            parameter param, 'Attributes by which listing will be sorted',
+                      enum: (attrs + attrs.map { |attr| "#{attr}:desc" })
 
-            do_request params
-            expect(body_map 'rating').to eq [0, 1, 2]
-          end
+            attrs.each do |attr|
+              context attr do
+                let(param) { attr }
+                example "Listing can be sorted by #{attr}" do
+                  do_request
+                  expect(body_map attr).to eq movies.pluck(attr).sort
+                end
+              end
 
-          example 'Descending sorting' do
-            params = {
-              sort_by: 'rating:desc'
-            }
-
-            do_request params
-            expect(body_map 'rating').to eq [2, 1, 0]
+              context "#{attr}:desc" do
+                let(param) { "#{attr}:desc" }
+                example "Listing can be reverse sorted by #{attr}:desc" do
+                  do_request
+                  expect(body_map attr).to eq movies.pluck(attr).sort.reverse
+                end
+              end
+            end
           end
         end
       end

@@ -29,6 +29,10 @@ resource 'Movies' do
     JSON.parse response_body
   end
 
+  def body_map(key)
+    parsed_body.map { |item| item[key.to_s] }
+  end
+
   get '/movies' do
     explanation 'Listing movies'
 
@@ -75,10 +79,6 @@ resource 'Movies' do
           movies
         end
 
-        def body_map(key)
-          parsed_body.map { |item| item[key] }
-        end
-
         context 'Sorting by year of release' do
           example 'Ascending sorting' do
             params = {
@@ -120,7 +120,7 @@ resource 'Movies' do
         end
       end
 
-      context 'Listing can be filtred' do
+      describe 'Filtering' do
         before :example do
           cook_movies
         end
@@ -140,11 +140,39 @@ resource 'Movies' do
           expected_movie
         end
 
-        example 'by :title_local' do
-          params = {
-            title_local: 'expected%'
-          }
-          do_request params
+        parameter :title_local, 'Where local title of movie like string'
+        parameter :title_original, 'Where original title of movie like string'
+        parameter :year_of_release_from,
+          'Where year of release more or equal number'
+        parameter :year_of_release_to,
+          'Where year of release less or equal number'
+        parameter :rating_from,
+          'Where rating more or equal number'
+        parameter :rating_to,
+          'Where rating less or equal number'
+        parameter :countries_of_production,
+          'Where countries of production includes country like name'
+        parameter :genres, 'Where genres crossing with names',
+          method: :param_genres
+
+        let(:title_local) { 'expected%' }
+        let(:title_original) { '%movie' }
+        let(:year_of_release_from) { 2019 }
+        let(:year_of_release_to) { 2019 }
+        let(:rating_from) { 7 }
+        let(:rating_to) { 7 }
+        let(:countries_of_production) { 'Russia' }
+        let(:param_genres) { %w[comedy crime] }
+
+        context 'Validate query parameters', document: false do
+          subject { params }
+          its(:keys) { should match_array(Movie.filter.scopes) }
+        end
+
+        example_request 'Listing can be filtred' do
+          explanation 'One parameter generate one'\
+            ' condition. All conditions are concatenated by AND statment'
+
           expect(body_map :title_local).to eq ['expected movie']
         end
       end
